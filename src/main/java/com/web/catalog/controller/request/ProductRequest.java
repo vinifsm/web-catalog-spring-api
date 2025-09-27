@@ -6,5 +6,7 @@ public record ProductRequest(String name,
                              String sku,
                              String description,
                              Double price,
-                             UUID categoryId) {
+                             UUID categoryId,
+                             UUID storeId,
+                             UUID imageId) {
 }

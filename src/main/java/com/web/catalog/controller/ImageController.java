@@ -10,6 +10,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,12 +20,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+
+
 @RestController
 @RequestMapping("/api/images")
 @RequiredArgsConstructor
 public class ImageController {
     private final ImageService imageService;
     private final String IMAGE_DIR = "../images/";
+
+    private void ensureDirectoryExists() throws IOException {
+        Path dirPath = Paths.get(IMAGE_DIR);
+        if (!Files.exists(dirPath)) {
+            Files.createDirectories(dirPath);
+        }
+    }
 
     @GetMapping
     public List<Image> getAll() {
@@ -39,6 +50,7 @@ public class ImageController {
 
     @GetMapping("/file/{filename}")
     public ResponseEntity<byte[]> getImageFile(@PathVariable String filename) throws IOException {
+        ensureDirectoryExists();
         Path imagePath = Paths.get(IMAGE_DIR, filename);
         if (!Files.exists(imagePath)) {
             return ResponseEntity.notFound().build();
@@ -62,15 +74,18 @@ public class ImageController {
             return ResponseEntity.badRequest().build();
         }
 
-        UUID uuid = UUID.randomUUID();
-        Image image = new Image();
-        image.setId(uuid);
-        image.setFileName(type + "_" + uuid.toString());
-        image.setUrl("/api/images/file/" + image.getFileName());
-        Image savedImage = imageService.save(image);
+        ensureDirectoryExists();
 
-        Path targetPath = Paths.get(IMAGE_DIR, image.getFileName());
-        Files.copy(file.getInputStream(), targetPath);
+        Image savedImage = imageService.save(new Image());
+        savedImage.setFileName(type + "_" + savedImage.getId().toString() + ".png");
+        savedImage.setUrl("/api/images/file/" + savedImage.getFileName());
+
+        Path targetPath = Paths.get(IMAGE_DIR, savedImage.getFileName());
+
+        BufferedImage bufferedImage = ImageIO.read(file.getInputStream());
+        ImageIO.write(bufferedImage, "png", targetPath.toFile());
+
+        imageService.save(savedImage);
 
         return ResponseEntity.ok(savedImage);
     }
@@ -84,15 +99,21 @@ public class ImageController {
             return ResponseEntity.badRequest().build();
         }
 
+        ensureDirectoryExists();
+
         Image image = optionalImage.get();
         Path targetPath = Paths.get(IMAGE_DIR, image.getFileName());
-        Files.copy(file.getInputStream(), targetPath);
+
+        BufferedImage bufferedImage = ImageIO.read(file.getInputStream());
+        ImageIO.write(bufferedImage, "png", targetPath.toFile());
 
         return ResponseEntity.ok(image);
     }
 
+
     @DeleteMapping("/{id}")
     public void delete(@PathVariable UUID id) throws IOException {
+        ensureDirectoryExists();
         imageService.findById(id).ifPresent(image -> {
             Path imagePath = Paths.get(IMAGE_DIR, image.getFileName());
             try {
