@@ -24,7 +24,7 @@ public class CategoryService {
     }
 
     public List<Category> findByStore(UUID storeId) {
-        return categoryRepository.findByStoreId(storeId);
+        return categoryRepository.findByStore_Id(storeId);
     }
 
     public Optional<Category> findById(UUID id) {

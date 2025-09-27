@@ -28,6 +28,11 @@ public class CategoryController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/store/{storeId}")
+    public List<Category> getByStore(@PathVariable(required = true) UUID storeId) {
+        return categoryService.findByStore(storeId);
+    }
+
     @PostMapping
     public ResponseEntity<Category> create(@RequestBody(required = true) CategoryRequest category) throws Exception {
         return ResponseEntity.ok(categoryService.create(category));

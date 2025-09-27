@@ -1,5 +1,6 @@
 package com.web.catalog.controller;
 
+import com.web.catalog.controller.request.UserRequest;
 import com.web.catalog.model.entity.User;
 import com.web.catalog.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +17,8 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public List<User> getAll() {
-        return userService.findAll();
+    public List<User> getAll(@RequestParam(required = false) UUID storeId) {
+        return storeId != null ? userService.findByStore(storeId) : userService.findAll();
     }
 
     @GetMapping("/{id}")
@@ -28,15 +29,13 @@ public class UserController {
     }
 
     @PostMapping
-    public User create(@RequestBody User user) {
-        return userService.save(user);
+    public ResponseEntity<User> create(@RequestBody UserRequest userRequest) throws Exception {
+        return ResponseEntity.ok(userService.create(userRequest));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> update(@PathVariable UUID id, @RequestBody User user) {
-        if (userService.findById(id).isEmpty()) return ResponseEntity.notFound().build();
-        user.setId(id);
-        return ResponseEntity.ok(userService.save(user));
+    public ResponseEntity<User> update(@PathVariable UUID id, @RequestBody UserRequest userRequest) throws Exception {
+        return ResponseEntity.ok(userService.update(userRequest, id));
     }
 
     @DeleteMapping("/{id}")
